@@ -1,19 +1,39 @@
+import { NvidiaScriptParams } from "../../systemd/nvidia";
+import { getParam } from "../../utils";
+
 enum GPUQueryParam {
   FAN_SPEED = "GPUTargetFanSpeed",
   FAN_CONTROL = "GPUFanControlState",
-  CORE_OFFSET = "GPUGraphicsClockOffset",
-  MEM_OFFSET = "GPUMemoryTransferRateOffset"
+  CORE_OFFSET = "GPUGraphicsClockOffset[3]",
+  MEM_OFFSET = "GPUMemoryTransferRateOffset[3]"
 }
 
-class NvidiaSettingsQueryBuilder {
-  constructor(
-    private gpuIdx: number,
-    private safeMode = true,
-    private display = ":0"
-  ) {}
+export class NvidiaSettingsQueryBuilder {
+  constructor(private gpuIdx: number, private safeMode = true) {}
 
-  public cmd(): string {
-    return `nvidia-settings -c ${this.display}`;
+  public static cmd(): string {
+    return `nvidia-settings`;
+  }
+
+  public static createNvidiaSettingsScript(config: NvidiaScriptParams) {
+    const scripts: string[] = [];
+    scripts.push(NvidiaSettingsQueryBuilder.cmd());
+
+    for (let i = 0; i < config.numGpus; i++) {
+      const sBuilder = new NvidiaSettingsQueryBuilder(i);
+      const { coreOffsets, fanSpeeds, memoryOffsets } = config;
+
+      scripts.push(
+        [
+          sBuilder.setFanControl(true),
+          sBuilder.setFanSpeed(getParam(fanSpeeds, i)),
+          sBuilder.setCoreOffset(getParam(coreOffsets, i)),
+          sBuilder.setMemoryOffset(getParam(memoryOffsets, i))
+        ].join(" ")
+      );
+    }
+
+    return scripts.join(" ");
   }
 
   public setFanControl(enable: boolean) {
@@ -40,7 +60,7 @@ class NvidiaSettingsQueryBuilder {
   }
 
   private modify(arg: string, n: number) {
-    return ` -a ${arg}=${n}`;
+    return `-a ${arg}=${n}`;
   }
 
   private queryStr(selector: string, query: GPUQueryParam) {
