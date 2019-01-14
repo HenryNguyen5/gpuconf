@@ -1,3 +1,6 @@
+import { AMDScriptParams } from "../../systemd/amd";
+import { getParam } from "../../utils";
+
 const DEFAULT_CORE_CLOCKS = `OD_SCLK:
 0: 300MHz 950mV
 1: 608MHz 955mV
@@ -29,17 +32,37 @@ enum PerformanceLevel {
 }
 
 export class AMDClocks {
-  public coreClockHeader() {
+  public static createAMDClockControlScript(config: AMDScriptParams) {
+    const scripts: string[] = [];
+    const { coreClocks, coreMvs, gpuOffset, memoryClocks, numOfGpus } = config;
+    scripts.push(AMDClocks.coreClockHeader());
+    for (let i = 0; i < numOfGpus; i++) {
+      const clockBuilder = new AMDClocks();
+      scripts.push(
+        clockBuilder.setCoreClock({
+          coreMHz: getParam(coreClocks, i),
+          state: 7,
+          voltageMV: getParam(coreMvs, 1)
+        })
+      );
+    }
+
+  }
+
+  public static coreClockHeader() {
     return this.overdriveHeader(Component.CORE);
   }
-  public setCoreClock(config: ClockConfig) {
+  public setCoreClock(config: Partial<ClockConfig>) {
+    if(config.coreMHz == null || config.voltageMV == null || config.state == null ) {
+      return ''
+    }
     return this.setStateClockVoltage(config);
   }
   public setCoreStates(states: number[]) {
     return this.setStates(Component.CORE, states);
   }
 
-  public memoryClockHeader() {
+  public static memoryClockHeader() {
     return this.overdriveHeader(Component.MEMORY);
   }
   public setMemoryClock(config: ClockConfig) {
@@ -60,7 +83,7 @@ export class AMDClocks {
   private setStates(component: Component, states: number[]) {
     return `FORCE_${component}: ${states.join(" ")}`;
   }
-  private overdriveHeader(component: Component) {
+  private static overdriveHeader(component: Component) {
     return `OD_${component}`;
   }
 }

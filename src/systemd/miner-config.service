@@ -1,0 +1,10 @@
+[Unit]
+Description=Miner Configuration
+After=multi-user.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/miner-config.sh &
+
+[Install]
+WantedBy=multi-user.target

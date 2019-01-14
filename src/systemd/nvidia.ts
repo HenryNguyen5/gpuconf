@@ -52,10 +52,10 @@ function createNvidiaScriptBody(config: NvidiaScriptParams): string {
 
 console.log(
   createNvidiaScript({
-    coreOffsets: [0],
-    fanSpeeds: [85],
+    coreOffsets: [],
+    fanSpeeds: [75],
     numGpus: 13,
     powerLimits: [125],
-    memoryOffsets: [200]
+    memoryOffsets: []
   })
 );

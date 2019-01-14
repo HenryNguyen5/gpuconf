@@ -23,14 +23,19 @@ export class NvidiaSMIQueryBuilder {
         [
           NvidiaSMIQueryBuilder.cmd(),
           smiBuilder.setPowerLimit(getParam(powerLimits, i))
-        ].join(" ")
+        ]
+          .filter(x => x !== null)
+          .join(" ")
       );
     }
 
     return scripts.join("\n");
   }
 
-  public setPowerLimit(lim: number) {
+  public setPowerLimit(lim?: number) {
+    if (lim === undefined) {
+      return null;
+    }
     if (this.safeMode && lim > 250) {
       throw Error("Unsafe power limit detected, not setting");
     }

@@ -29,8 +29,13 @@ export class NvidiaSettingsQueryBuilder {
           sBuilder.setFanSpeed(getParam(fanSpeeds, i)),
           sBuilder.setCoreOffset(getParam(coreOffsets, i)),
           sBuilder.setMemoryOffset(getParam(memoryOffsets, i))
-        ].join(" ")
+        ]
+          .filter(x => x !== null)
+          .join(" ")
       );
+    }
+    if (scripts.length === config.numGpus * 2) {
+      return "";
     }
 
     return scripts.join(" ");
@@ -41,7 +46,10 @@ export class NvidiaSettingsQueryBuilder {
     return this.modify(q, +enable);
   }
 
-  public setFanSpeed(n: number) {
+  public setFanSpeed(n?: number) {
+    if (n === undefined) {
+      return null;
+    }
     if (n > 100 || n < (this.safeMode ? 20 : 0)) {
       throw Error(`Fan speed of ${n} unsupported`);
     }
@@ -49,12 +57,18 @@ export class NvidiaSettingsQueryBuilder {
     return this.modify(q, n);
   }
 
-  public setCoreOffset(offset: number) {
+  public setCoreOffset(offset?: number) {
+    if (offset === undefined) {
+      return null;
+    }
     const q = this.gpuQueryStr(GPUQueryParam.CORE_OFFSET);
     return this.modify(q, offset);
   }
 
-  public setMemoryOffset(offset: number) {
+  public setMemoryOffset(offset?: number) {
+    if (offset === undefined) {
+      return null;
+    }
     const q = this.gpuQueryStr(GPUQueryParam.MEM_OFFSET);
     return this.modify(q, offset);
   }
